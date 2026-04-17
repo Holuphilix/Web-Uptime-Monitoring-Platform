@@ -1,0 +1,112 @@
+digraph PlatformArchitecture {
+  graph [
+    rankdir=LR,
+    bgcolor="#fbfcfe",
+    pad="0.35",
+    nodesep="0.55",
+    ranksep="0.85",
+    splines=polyline,
+    fontname="Arial",
+    label="High-Level Platform Architecture\nSelf-Service Uptime, Observability, and Automated Alerting",
+    labelloc=t,
+    labeljust=c,
+    fontsize=24,
+    fontcolor="#142033"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fontname="Arial",
+    fontsize=13,
+    color="#314a61",
+    fillcolor="#ffffff",
+    fontcolor="#142033",
+    margin="0.16,0.10"
+  ];
+
+  edge [
+    color="#314a61",
+    fontname="Arial",
+    fontsize=10,
+    arrowsize=0.8,
+    penwidth=1.7
+  ];
+
+  engineer [label="Platform User\nDeveloper / Operator", fillcolor="#f8fbff"];
+
+  subgraph cluster_platform {
+    label="Self-Service Monitoring Platform";
+    color="#4b87ff";
+    fontcolor="#142033";
+    fillcolor="#edf4ff";
+    style="rounded,filled";
+    penwidth=2;
+
+    webui [label="Web Interface\nRegister URLs for Monitoring", fillcolor="#ffffff"];
+    api [label="Backend API\nValidation, Onboarding, Results", fillcolor="#ffffff"];
+    scheduler [label="Background Scheduler\nContinuous Checks", fillcolor="#ffffff"];
+    metrics [label="Metrics Endpoint\nStandardized Service Metrics", fillcolor="#ffffff"];
+    db [label="PostgreSQL\nRegistered URLs and Check History", fillcolor="#ffffff"];
+  }
+
+  subgraph cluster_targets {
+    label="Monitored Targets";
+    color="#35a76f";
+    fontcolor="#142033";
+    fillcolor="#eefbf3";
+    style="rounded,filled";
+    penwidth=2;
+
+    websites [label="Public Websites / Services", fillcolor="#ffffff"];
+  }
+
+  subgraph cluster_observability {
+    label="Shared Observability Layer";
+    color="#e38b1f";
+    fontcolor="#142033";
+    fillcolor="#fff7ec";
+    style="rounded,filled";
+    penwidth=2;
+
+    prometheus [label="Prometheus\nMetrics Storage + Alert Evaluation", fillcolor="#ffffff"];
+    grafana [label="Grafana\nReusable Dashboards", fillcolor="#ffffff"];
+    alertmanager [label="Alertmanager\nRouting + Notification Policies", fillcolor="#ffffff"];
+    slack [label="Slack\nIncident Notifications", fillcolor="#ffffff"];
+    nodeexporter [label="Node Exporter\nHost Infrastructure Metrics", fillcolor="#ffffff"];
+  }
+
+  subgraph cluster_platform_principles {
+    label="Platform Outcomes";
+    color="#7b66ff";
+    fontcolor="#142033";
+    fillcolor="#f3efff";
+    style="rounded,filled";
+    penwidth=2;
+
+    standardized [label="Standardized Monitoring\nMetrics, Rules, Dashboards", fillcolor="#ffffff"];
+    reusable [label="Reusable Platform\nOne Setup, Many Services", fillcolor="#ffffff"];
+    selfservice [label="Developer Experience\nSelf-Service Onboarding", fillcolor="#ffffff"];
+  }
+
+  engineer -> webui [label="register URL"];
+  webui -> api [label="submit request"];
+  api -> db [label="store monitor"];
+  api -> websites [label="on-demand check"];
+  scheduler -> websites [label="continuous checks"];
+  scheduler -> db [label="save history"];
+  api -> metrics [label="emit metrics"];
+  scheduler -> metrics [label="update metrics"];
+
+  metrics -> prometheus [label="scrape app metrics"];
+  nodeexporter -> prometheus [label="scrape host metrics"];
+  prometheus -> grafana [label="query data"];
+  prometheus -> alertmanager [label="fire alerts"];
+  alertmanager -> slack [label="send notifications"];
+
+  api -> standardized [style=dashed, color="#6f5cff", fontcolor="#6f5cff", label="standardizes"];
+  prometheus -> standardized [style=dashed, color="#6f5cff", fontcolor="#6f5cff", label="enforces"];
+  standardized -> reusable [style=dashed, color="#6f5cff", fontcolor="#6f5cff"];
+  webui -> selfservice [style=dashed, color="#6f5cff", fontcolor="#6f5cff"];
+  reusable -> selfservice [style=dashed, color="#6f5cff", fontcolor="#6f5cff"];
+}

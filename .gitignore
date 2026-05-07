@@ -22,6 +22,7 @@ docker-compose.override.yml
 # IDEs
 .vscode/
 .idea/
+.codex/
 
 # Temporary files
 tmp/

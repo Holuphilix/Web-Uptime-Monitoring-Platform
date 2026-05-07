@@ -2,7 +2,92 @@ global:
   resolve_timeout: 5m
 
 route:
-  receiver: "default"
+  receiver: "null-receiver"
+  group_by: ["alertname", "url"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+
+  routes:
+    # 🔴 Website DOWN alerts
+    - receiver: "website-event-slack"
+      matchers:
+        - service="uptime-monitor"
+        - alertname="WebsiteDown"
+
+    # ⚠️ Performance alerts
+    - receiver: "website-performance-slack"
+      matchers:
+        - service="uptime-monitor"
+        - alertname="HighResponseTime"
 
 receivers:
-  - name: "default"
+  - name: "null-receiver"
+
+  # 🔴 WEBSITE STATUS ALERTS
+  - name: "website-event-slack"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}
+        channel: "#uptime-monitoring-alerts"
+        username: "Uptime Monitoring Alerts"
+        icon_emoji: ":rotating_light:"
+        send_resolved: true
+
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+        title: >
+          {{ if eq .Status "firing" }}🚨 Website DOWN{{ else }}✅ Website RESOLVED{{ end }}
+
+        text: |-
+          {{ if eq .Status "firing" }}🚨 *Website Monitoring Alert*{{ else }}✅ *Website Monitoring RESOLVED*{{ end }}
+
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Status:* {{ if eq .Status "firing" }}🔴 DOWN{{ else }}🟢 RESOLVED{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Website:* {{ .CommonLabels.url }}
+
+          *Message:* {{ if eq .Status "firing" }}
+          Website is not reachable
+          {{ else }}
+          Website is back to normal
+          {{ end }}
+
+          *Time:* {{ if eq .Status "firing" }}
+          {{ (index .Alerts 0).StartsAt }}
+          {{ else }}
+          {{ (index .Alerts 0).EndsAt }}
+          {{ end }}
+
+  # ⚠️ PERFORMANCE ALERTS
+  - name: "website-performance-slack"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}
+        channel: "#uptime-monitoring-alerts"
+        username: "Uptime Monitoring Alerts"
+        icon_emoji: '{{ if eq .Status "firing" }}:warning:{{ else }}:white_check_mark:{{ end }}'
+        send_resolved: true
+
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+
+        title: >
+          {{ if eq .Status "firing" }}⚠️ Website Performance Alert{{ else }}✅ Website Performance RESOLVED{{ end }}
+
+        text: |-
+          {{ if eq .Status "firing" }}⚠️ *Website Performance Alert*{{ else }}✅ *Website Performance RESOLVED*{{ end }}
+
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Status:* {{ if eq .Status "firing" }}🟠 DEGRADED{{ else }}🟢 NORMAL{{ end }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Website:* {{ .CommonLabels.url }}
+
+          *Message:* {{ if eq .Status "firing" }}
+          Website response time is above threshold
+          {{ else }}
+          Website response time has returned to normal
+          {{ end }}
+
+          *Time:* {{ if eq .Status "firing" }}
+          {{ (index .Alerts 0).StartsAt }}
+          {{ else }}
+          {{ (index .Alerts 0).EndsAt }}
+          {{ end }}

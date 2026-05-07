@@ -2,9 +2,38 @@ groups:
   - name: system-alerts
     rules:
       - alert: HighCPUUsage
-        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
-        for: 1m
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[10m])) * 100) > 95
+        for: 10m
         labels:
           severity: warning
+          service: system
         annotations:
-          summary: "High CPU usage detected"
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "Host CPU usage is above 95% for at least 10 minutes."
+
+  - name: uptime-alerts
+    rules:
+      - alert: WebsiteDown
+        expr: uptime_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: uptime-monitor
+        annotations:
+          summary: "Website DOWN"
+          description: "Website {{ $labels.url }} is not reachable."
+
+      - alert: HighResponseTime
+        expr: |
+          (
+            sum by (url) (rate(response_time_seconds_sum[5m]))
+            /
+            sum by (url) (rate(response_time_seconds_count[5m]))
+          ) > 2
+        for: 2m
+        labels:
+          severity: warning
+          service: uptime-monitor
+        annotations:
+          summary: "High response time detected"
+          description: "Website {{ $labels.url }} response time is above 2 seconds."
